@@ -163,6 +163,7 @@ class GuidedProjectionBase(object):
         self.on_initialize()
 
     def initialization(self):
+        print("initialization")
         self._initialization()
         self.reinitialization()
 
@@ -183,6 +184,7 @@ class GuidedProjectionBase(object):
             #print(self._report) # Hui note: comment to unshow the residual table
 
     def reinitialization(self):
+        print("reinitialization")
         self._set_weights()
         self._set_dimensions()
         self._reinitialization()

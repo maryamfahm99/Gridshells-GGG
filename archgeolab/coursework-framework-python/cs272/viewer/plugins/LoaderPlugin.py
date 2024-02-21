@@ -21,10 +21,15 @@ class LoaderPlugin(ViewerPlugin):
         else:
             model = Mesh()
         if model.load(filename):
+            print("load1")
             self.viewer.append_data(True)
+            print("load2")
             self.model_list.append(model)
+            print("load3")
             assert (len(self.model_list) == len(self.viewer.data_list))
+            print("load4: ", self.viewer.data_list[-1].id)
             model.update_viewer_data(self.viewer.data_list[-1])
+            print("load5")
             return True
         return False
 

@@ -105,7 +105,9 @@ class ViewerData(object):
         self.dirty |= DirtyFlags.DIRTY_FACE | DirtyFlags.DIRTY_POSITION
 
     def set_vertices(self, v):
+        # print("set_vertices") # Maryam
         self.V = copy.deepcopy(v)
+        # print("V: ", self.V) # Maryam
         assert (self.F.size == 0 or numpy.max(self.F) < self.V.shape[0])
         self.dirty |= DirtyFlags.DIRTY_POSITION
 

@@ -13,6 +13,9 @@ from utils.camera import trackball, two_axis_evaluator_fixed_up
 from utils.camera import snap_to_canonical_view_quat
 from viewer.ViewerCore import ViewerCore, RotationType
 from viewer.ViewerData import ViewerData
+#### Mrayam
+import igl
+import numpy as np
 
 
 class MouseButton(Enum):
@@ -352,7 +355,6 @@ class Viewer(object):
     ###################################################################################################################
 
     def key_pressed(self, key, modifiers):
-
         for plugin in self.plugins:
             if plugin.key_pressed(key, modifiers):
                 return True
@@ -364,6 +366,7 @@ class Viewer(object):
         return False
 
     def key_down(self, key, modifiers):
+        print("key_pressed")
         # print("in key down")
         for plugin in self.plugins:
             # print("in 1 ",key)
@@ -400,8 +403,32 @@ class Viewer(object):
         return False
 
     def select_hovered_core(self):
-
+        # print("select_hovered_core")
         width_window, height_window = glfw.get_framebuffer_size(self.window)
+        # print("self.current_mouse_x and y : ", self.current_mouse_x, " ", self.current_mouse_y)
+        # print("window widthand height: ",width_window, " ", height_window)
+
+        ############ Maryam
+        # pos = np.array([self.current_mouse_x, self.current_mouse_y]).astype(float)
+        # model = (self.core().view).astype(np.float64)
+        # proj = self.core().proj
+        # viewport = np.array(self.core().viewport).astype(np.float64)
+        # # print("viewport")
+        # v = (self.data().V).astype(np.float64)
+        # v = np.asfortranarray(v)
+        # print("model: ", model)
+        # print("proj: ",proj)
+        # print("viewport: ",viewport)
+        
+        # f = (self.data().F).astype(np.int32)
+        # # print("f",f)
+        # # print("f: ", type(f), type(viewport),type(pos), type(model), type(proj))
+
+        # hit, bc, fid  =  igl.unproject_onto_mesh(pos, model, proj, viewport, v, f) # Maryam
+        # print("point: ", fid, " ", bc," ", hit)
+
+        ############ 
+
         for i in range(len(self.core_list)):
             viewport = self.core_list[i].viewport
 
@@ -411,6 +438,7 @@ class Viewer(object):
                     ((height_window - self.current_mouse_y) < viewport[1] + viewport[3])):
                 self.selected_core_index = i
                 break
+        
 
     def mouse_down(self, button, modifier):
 
@@ -697,8 +725,10 @@ class Viewer(object):
         return self.data_list[index]
 
     def append_data(self, visible=True):
-
+        print("append_data") # Maryam
+        
         self.data_list.append(ViewerData())
+        print("data: ", self.data_list[-1].id)
         self.selected_data_index = len(self.data_list) - 1
         self.data_list[-1].id = self.next_data_id
         self.next_data_id += 1
@@ -707,6 +737,7 @@ class Viewer(object):
                 self.data_list[-1].set_visible(True, core.id)
         else:
             self.data_list[-1].is_visible = 0
+        print("data: ", self.data_list[-1].id)
         return self.data_list[-1].id
 
     def erase_data(self, index):

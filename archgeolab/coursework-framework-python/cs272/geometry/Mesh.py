@@ -8,6 +8,23 @@ from utils.colormap import ColorMapType
 from utils.maths import gaussian, random_vector
 from geometry.Geometry import Geometry
 
+#######################  Maryam import
+import sys
+# Add the parent directory of geometry-lab-main to the Python path
+# path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+path = '/Users/memo2/Desktop/2022-2023/Summer2023/WebImplementation/geometry-lab-main'
+sys.path.append(path)
+# print("first path: ", path)
+# # Now you can import from the geometrylab.geometry module
+from geometrylab.geometry.meshpy import Mesh as quad_mesh
+from archgeolab.archgeometry.quadrings import MMesh
+# from meshpy import mesh as quad_mesh
+# tran = quad_mesh()
+from geometrylab.geometry import Polyline
+from archgeolab.proj_orthonet.guidedprojection_orthonet import GP_OrthoNet
+# from archgeolab.proj_orthonet.guidedprojection_orthonet import GP_OrthoNet
+######################
+
 
 class NoiseDirection(IntEnum):
     NORMAL = 0
@@ -24,6 +41,7 @@ class Mesh(Geometry):
         self.colormap = ColorMapType.NUM_COLOR_MAP_TYPES
         self.mesh = None
         self.mesh_original = None
+        self.optimizer = GP_OrthoNet() # Maryam
 
     def load(self, filename):
         # Load a mesh
@@ -65,13 +83,14 @@ class Mesh(Geometry):
         return True
 
     def update_viewer_data(self, data):
-
+        print("update_viewer_data, mesh")
         # Clear viewer
         data.clear()
         data.clear_edges()
 
         # Convert mesh to viewer format
         tmp_v, tmp_f, tmp_f_to_f, tmp_n, tmp_uv, p1, p2 = Mesh.to_render_data(self.mesh)
+        # qd_mesh = Mesh.optimize(self.mesh) ## Maryam
 
         # Plot the mesh
         data.set_mesh(tmp_v, tmp_f)
@@ -96,6 +115,7 @@ class Mesh(Geometry):
 
     @staticmethod
     def to_render_data(mesh: openmesh.PolyMesh):
+        print("to_render_data")
         # Triangulate
         face_map = dict()
         normals_orig = dict()
@@ -173,7 +193,6 @@ class Mesh(Geometry):
             for fvi in tri_mesh.fv(fh):
                 faces[fh.idx(), vi] = fvi.idx()
                 vi += 1
-
         # Face map
         for key, value in face_map.items():
             f_to_f[key, 0] = value
@@ -207,8 +226,46 @@ class Mesh(Geometry):
             edges2[eh.idx(), 0] = v2[0]
             edges2[eh.idx(), 1] = v2[1]
             edges2[eh.idx(), 2] = v2[2]
-
+        
         return verts, faces, f_to_f, norms, texs, edges1, edges2
+    ############### Maryam
+
+    def tri_to_quad(self):
+        print("tri_to_quad")
+        # This takes a Mesh object and returns a mesh object from geometry-lab-main
+        # transformed_mesh = quad_mesh()
+        transformed_mesh = MMesh()  # MMesh already makes a Mesh object so i can use both's functions
+        verts, faces,  _, _, _, _, _ = Mesh.to_render_data(self.mesh)
+        extracted_faces = faces[:, :3]
+        print("self.mesh.vertices(): ",self.mesh.vertices())
+        print("verts", verts)
+        # print(extracted_faces)
+        #### make mesh should be initialized first, i need to follow the other framework way
+        transformed_mesh.make_mesh(verts, extracted_faces)
+        return transformed_mesh
+    def quad_to_tri(self):
+        # This takes  a mesh object from geometry-lab-main and returns a Mesh object
+        return 0
+    
+    def optimize(self):
+        print("optimize")
+        quad = Mesh.tri_to_quad(self)
+        ### use optimize from ortho
+        print("quad type: ", type(quad))
+        print("opt mesh: ",self.optimizer.mesh) 
+        ### update q.V, F, and such to set the dimentions like mesh_propogate
+        # self.mesh._V += len(new_v)
+        # self.mesh._F += len(new_f)
+        # self.mesh._E += 2*len(new_v)-1
+        # # print(self.mesh._V,self.mesh._F,self.mesh._E)
+        # self.mesh._vertices = np.vstack((self.mesh._vertices, new_v))
+        # self.mesh._faces = np.vstack((self.mesh._faces, new_f))
+        self.optimizer.mesh = quad 
+        print("opt mesh: ",self.optimizer.mesh) 
+        # self.optimizer.optimize()
+        return 0 
+
+    ############### Maryam
 
     def mesh(self):
         return self.mesh

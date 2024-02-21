@@ -76,26 +76,26 @@ if __name__ == '__main__':
     component = OrthoNet()
     #Bolun change this
     # component.optimization_step()  # this only
-    # component.optimizer.optimize()
+    component.optimizer.optimize()
     
 
     '''Instantiate the main geolab application'''
     # import geometrylab as geo ##Hui: replaced by below
     # GUI = geo.gui.GeolabGUI()
     ###########the following is commented out Bolun
-    from archgeolab.archgeometry.gui_basic import GeolabGUI
-    GUI = GeolabGUI()
-    print("After GeolabGUI")
-    '''Add the component to geolab'''
-    GUI.add_component(component)
-    print("After add_component")
-    '''Open an obj file'''
-    GUI.open_obj_file(file)
+    # from archgeolab.archgeometry.gui_basic import GeolabGUI
+    # GUI = GeolabGUI()
+    # print("After GeolabGUI")
+    # '''Add the component to geolab'''
+    # GUI.add_component(component)
+    # print("After add_component")
+    # '''Open an obj file'''
+    # GUI.open_obj_file(file)
     
-    '''Open another obj file'''
-    #GUI.open_obj_file(reffile)
+    # '''Open another obj file'''
+    # #GUI.open_obj_file(reffile)
     
-    '''Start geolab main loop''' 
-    print("Geo start")
-    GUI.start()
+    # '''Start geolab main loop''' 
+    # print("Geo start")
+    # GUI.start()
 

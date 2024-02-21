@@ -40,7 +40,6 @@ class PointCloud(Geometry):
         return False
 
     def update_viewer_data(self, data):
-
         # Clear viewer
         data.clear()
         data.clear_edges()

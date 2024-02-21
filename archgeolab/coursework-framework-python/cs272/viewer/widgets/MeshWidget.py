@@ -3,6 +3,7 @@ import numpy
 from viewer.ViewerWidget import ViewerWidget, AnchorType
 from viewer.opengl.MeshGL import DirtyFlags
 from geometry.Mesh import Mesh, NoiseDirection
+import igl
 
 
 def write_paraboloid_obj(a, b, x1min, x1max, x2min, x2max, nx1, nx2, filename):
@@ -187,6 +188,20 @@ class MeshWidget(ViewerWidget):
 
                     imgui.spacing()
 
+                    ################## Maryam
+
+                    # Optimization
+                    if imgui.collapsing_header("Optimization", imgui.TREE_NODE_DEFAULT_OPEN):
+                        if imgui.button("GGG", -1, 0):
+                            print("opt")
+                            # mesh.optimize(MeshWidget.fairness, MeshWidget.GGG)
+                            mesh.optimize()
+                            print("before update_viewer")
+                            mesh.update_viewer_data(self.viewer.data(index))
+                            print("after update_viewer")
+
+                    ##################
+
                     # Overlays
                     if imgui.collapsing_header("Overlays", imgui.TREE_NODE_DEFAULT_OPEN):
 
@@ -288,6 +303,38 @@ class MeshWidget(ViewerWidget):
         return False
 
     def mouse_down(self, button, modifier):
+        pos = numpy.array([self.viewer.current_mouse_x, self.viewer.core().viewport[3] - self.viewer.current_mouse_y]).astype(float)
+        model = (self.viewer.core().view).astype(numpy.float64)
+        proj = self.viewer.core().proj
+        viewport = numpy.array(self.viewer.core().viewport).astype(numpy.float64)
+        # print("viewport")
+        v = (self.viewer.data().V).astype(numpy.float64)
+        # v = numpy.asfortranarray(v)
+        print("model: ", model)
+        print("proj: ",proj)
+        print("viewport: ",viewport)
+        
+        f = (self.viewer.data().F).astype(numpy.int32)
+        # print("f",f)
+        # print("f: ", type(f), type(viewport),type(pos), type(model), type(proj))
+
+        hit, fid, bc  =  igl.unproject_onto_mesh(pos, model.transpose(), proj.transpose(), viewport.transpose(), v, f) # Maryam
+        print("point: ", fid, " ", bc," ", hit)
+        print("x, y, ",pos)
+        # print("vlist size",v.shape)
+        # print("flist size",f.shape)
+        
+        if hit:
+            color = numpy.array([1, 0, 0])
+            colors = numpy.repeat([color], 1, axis=0)
+            whichpoint = numpy.argmax(bc)
+            if self.viewer.selected_data_index>-1:
+                # print("one point, ",v[f[fid,whichpoint]])
+                print("pid, ",f[fid,whichpoint])
+                parray = []
+                parray.append(v[f[fid,whichpoint]])
+                # print(parray)
+                self.viewer.data(self.viewer.selected_data_index).add_points(numpy.array(v[f[fid,whichpoint]]).reshape((1,3)), colors)
         return False
 
     def mouse_up(self, button, modifier):

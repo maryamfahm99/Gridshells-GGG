@@ -1,1 +1,4 @@
-file = local + '/obj_anet' + '/mesh_initialization/stripp17.obj' ##M1_eq TC2_eq.
+component = OrthoNet()
+    #Bolun change this
+    # component.optimization_step()  # this only
+    component.optimizer.optimize()

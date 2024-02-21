@@ -11,15 +11,15 @@ from geometrylab.gui.interactivegp import InteractiveGuidedProjection
 
 from geometrylab.gui.geolabcomponent import GeolabComponent
 # Bolun changed here
-from geometrylab.gui.geolabgui import GeolabGUI
+# from geometrylab.gui.geolabgui import GeolabGUI
 # Bolun changed here
-from geometrylab.gui.geolabgui import view
+# from geometrylab.gui.geolabgui import view
 # Bolun changed here
-from geometrylab.gui.geolabscene import GeolabScene
+# from geometrylab.gui.geolabscene import GeolabScene
 # Bolun changed here
-from geometrylab.gui.geolabmesh import GeolabMesh
+# from geometrylab.gui.geolabmesh import GeolabMesh
 # Bolun changed here all the lines down here
-from geometrylab.gui.scenemanager import SceneManager
+# from geometrylab.gui.scenemanager import SceneManager
 
 # from geometrylab.gui.multiscenemanager import MultiSceneManager
 

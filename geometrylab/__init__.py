@@ -10,9 +10,9 @@ from geometrylab import fitting
 
 from geometrylab import optimization
 # Bolun changed here
-from geometrylab import vtkplot
+# from geometrylab import vtkplot
 # Bolun changed here
-from geometrylab import gui
+# from geometrylab import gui
 
 try:
     from geometrylab import symbolic

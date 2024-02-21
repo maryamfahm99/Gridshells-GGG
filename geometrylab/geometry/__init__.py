@@ -14,7 +14,7 @@ from geometrylab.geometry.polyline import Polyline
 
 from geometrylab.geometry.circle import Circle
 #Bolun change this
-from geometrylab.geometry.bspline import BSpline
+# from geometrylab.geometry.bspline import BSpline
 
 #------------------------------------------------------------------------------
 

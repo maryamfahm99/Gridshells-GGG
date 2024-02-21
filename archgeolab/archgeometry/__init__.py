@@ -20,4 +20,4 @@ from archgeolab.archgeometry import meshes
 
 from archgeolab.archgeometry import gridshell
 # Bolun changed here
-from archgeolab.archgeometry import gui_basic
+# from archgeolab.archgeometry import gui_basic
