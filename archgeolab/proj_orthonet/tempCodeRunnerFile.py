@@ -1,0 +1,1 @@
+file = local + '/obj_anet' + '/mesh_initialization/stripp17.obj' ##M1_eq TC2_eq.
