@@ -24,7 +24,7 @@ from archgeolab.constraints.constraints_fairness import con_fairness_4th_differe
 from archgeolab.constraints.constraints_net import con_unit_edge,\
     con_orthogonal_midline,con_planar_1familyof_polylines,\
     con_anet,con_anet_diagnet,con_snet,con_snet_diagnet,con_multinets_orthogonal,\
-    con_AAG, con_AGG, con_GGG, con2_GGG, con_fairness # Maryam
+    con_AAG, con_AGG, con_GGG, con2_GGG, con_fairness, isometric, aproximate # Maryam
 
 from archgeolab.constraints.constraints_glide import con_glide_in_plane,\
     con_alignment,con_alignments,con_selected_vertices_glide_in_one_plane,\
@@ -500,7 +500,7 @@ class GP_OrthoNet(GuidedProjectionBase):
             X = np.r_[X,V4N.flatten('F')]
 
         if self.get_weight('GGG'): # Maryam
-            if(self.mesh._mesh_propogate):
+            # if(self.mesh._mesh_propogate):
                 # print("self.mesh._vertices: ", self.mesh._vertices)
                 print("initialize_unknowns_vector GGG" )
                 v,v1,v2,v3,v4 = self.mesh.rrv4f4
@@ -509,11 +509,11 @@ class GP_OrthoNet(GuidedProjectionBase):
                 
                 # num=self.mesh.num_rrv4f4
                 vs =  self.mesh._vertices
-                print(v1, v3, v2, v4,  va, vc)
+                # print(v1, v3, v2, v4,  va, vc)
 
                 cross_products = np.array([np.cross(va_i, vb_i) for va_i, vb_i in zip(vs[v1]-vs[v3], vs[v2]-vs[v4])])
                 V4N_norm =  np.linalg.norm(cross_products, axis = 1) 
-                print("cross_products: ", V4N_norm)
+                # print("cross_products: ", V4N_norm)
                 V4N = cross_products / V4N_norm[:, np.newaxis]
                 zero_norm_indices = np.where(V4N_norm == 0.0)[0]
                 for i in zero_norm_indices:
@@ -525,7 +525,7 @@ class GP_OrthoNet(GuidedProjectionBase):
                 zero_norm_indices = np.where(V4B1_norm == 0.0)[0]
                 for i in zero_norm_indices:
                     V4B1[i] = np.array([0,0,1])
-                print("V4B1_norm: ", V4B1_norm)
+                # print("V4B1_norm: ", V4B1_norm)
 
                 cross_b2 = np.array([np.cross(va_i, vb_i) for va_i, vb_i in zip(vs[v2]-vs[v], vs[v4]-vs[v])])
                 V4B2_norm = np.linalg.norm(cross_b2, axis = 1)
@@ -535,7 +535,7 @@ class GP_OrthoNet(GuidedProjectionBase):
                 for i in zero_norm_indices:
                     V4B2[i] = np.array([0,0,1])
 
-                print("V4B2_norm: ", V4B2_norm, V4B2)
+                # print("V4B2_norm: ", V4B2_norm, V4B2)
 
                 cross_b3 = np.array([np.cross(va_i, vb_i) for va_i, vb_i in zip(vs[va]-vs[v], vs[vc]-vs[v])])
                 V4B3_norm = np.linalg.norm(cross_b3, axis = 1)
@@ -543,12 +543,12 @@ class GP_OrthoNet(GuidedProjectionBase):
                 zero_norm_indices = np.where(V4B3_norm == 0.0)[0]
                 for i in zero_norm_indices:
                     V4B3[i] = np.array([0,0,1])
-                print("V4B3_norm: ", V4B3_norm)
+                # print("V4B3_norm: ", V4B3_norm)
 
                 X = np.r_[X,V4N.flatten('F'), V4B1.flatten('F'), V4B2.flatten('F'), V4B3.flatten('F') ]
                 print("i: det end")
                 print("X:  ", X.shape)
-            self.mesh._mesh_propogate = False
+                self.mesh._mesh_propogate = False
            
             
         if self.get_weight('planar_ply1'):
@@ -800,10 +800,11 @@ class GP_OrthoNet(GuidedProjectionBase):
         self.build_added_weight() # Hui change
         # H, r = self.mesh.iterative_constraints(**self.weights) ##NOTE: in gridshell.py
         # self.add_iterative_constraint(H, r, 'mesh_iterative')
+        # print("**self.weights: ", self.weights)
         H, r = self.mesh.fairness_energy(**self.weights) ##NOTE: in gridshell.py
         #H, r = con_fairness(**self.weights)
         self.add_iterative_constraint(H, r, 'fairness')
-        print(H.nnz)
+        # print("H.nnz: ", H.nnz)
         if self.get_weight('fairness_4diff'):
             pl1,pl2 = self.mesh.all_rr_continuous_polylist
             pl1.extend(pl2)
@@ -965,10 +966,25 @@ class GP_OrthoNet(GuidedProjectionBase):
         if self.get_weight('GGG'): # Maryam
             print("GGG!!") 
             # H,r = con_GGG(rregular=True,**self.weights)
+            # v_ids  = self.get_weight('vertex_control')
+            # print("v_ids: ", v_ids)
             H,r = con2_GGG(rregular=True,**self.weights)
+            # H,r = isometric(rregular=True,**self.weights)
+            
             self.add_iterative_constraint(H, r, 'GGG')
-            print(H.nnz)
+            # print(H.nnz)
+            
+        if self.get_weight('iso'): # Maryam
+            print("ISO!!")
+            H,r = isometric(rregular=True,**self.weights)
+            self.add_iterative_constraint(H, r, 'iso')
         
+        ##### APROX
+        if self.get_weight('aprox'): # Maryam
+            print("APROX!!")
+            H,r = aproximate(rregular=True,**self.weights)
+            self.add_iterative_constraint(H, r, 'iso') ## APROX
+
         if self.get_weight('Snet'):
             orientrn = self.mesh.new_vertex_normals()
             H,r = con_snet(orientrn,

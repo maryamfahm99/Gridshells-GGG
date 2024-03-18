@@ -67,7 +67,14 @@ def main():
     # a = path + '\archgeolab\objs'
     local = '/Users/memo2/Desktop/2022-2023/Summer2023/WebImplementation/geometry-lab-main/archgeolab/objs'
     # path = local + '/obj_anet' + '/mesh_initialization/stripp17.obj' ##M1_eq TC2_eq.
-    path = local + '/obj_equilibrium/tri_dome.obj' #+ '/mesh_initialization/stripp17.obj' ##M1_eq TC2_eq.
+    # path = local + '/obj_anet//mesh_initialization/results/init_Almaskin.obj' #+ '/mesh_initialization/stripp17.obj' ##M1_eq TC2_eq.
+    # path = local + '/obj_anet//mesh_initialization/results/2strip.obj' #+ '/mesh_initialization/stripp17.obj' ##M1_eq TC2_eq.
+    # path = local + '/obj_anet//mesh_initialization/quad_mesh.obj' #+ '/mesh_initialization/stripp17.obj' ##M1_eq TC2_eq.
+    # path = local + '/obj_anet//mesh_initialization/file_7.obj' #+ '/mesh_initialization/stripp17.obj' ##M1_eq TC2_eq.
+    path = local + '/obj_anet//mesh_initialization/results/example3//ex3_Almaskin.obj' #+ '/mesh_initialization/stripp17.obj' ##M1_eq TC2_eq.
+
+
+    # path = local + '/obj_anet//mesh_initialization/results/example4/ex4_Almaskin.obj' #+ '/mesh_initialization/stripp17.obj' ##M1_eq TC2_eq.
 
     print("model path",path)
     # print("current path", path)

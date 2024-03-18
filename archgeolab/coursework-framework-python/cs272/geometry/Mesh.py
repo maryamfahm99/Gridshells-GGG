@@ -18,6 +18,7 @@ sys.path.append(path)
 # # Now you can import from the geometrylab.geometry module
 from geometrylab.geometry.meshpy import Mesh as quad_mesh
 from archgeolab.archgeometry.quadrings import MMesh
+from archgeolab.archgeometry.gridshell import Gridshell
 # from meshpy import mesh as quad_mesh
 # tran = quad_mesh()
 from geometrylab.geometry import Polyline
@@ -41,9 +42,33 @@ class Mesh(Geometry):
         self.colormap = ColorMapType.NUM_COLOR_MAP_TYPES
         self.mesh = None
         self.mesh_original = None
+        ###### Maryam
         self.optimizer = GP_OrthoNet() # Maryam
+        self.quad_mesh = None          # Maryam
+        self.meshFairness = 0.01
+        self.boundFairness = 0.01
+        self.GGG_weight = 0.01
+        self.vertexControl = 1.0
+        self.iso_weight = 1.0
+        self.aprox_weight = 0.0  ### APROX
+        GGG = False
+        aprox = False ### APROX
+        p1 = None
+        p2= None
+        # self.v_ids = list(range(20))
+        # self.v_ids = list(range(20))
+        self.v_ids = list(range(32))
+        self.weights = {
+        'GGG' : 0, # Maryam
+        'iso' : 0,
+        'aprox': 0,  ### APROX
+        'vertex_control': None
+        }
+        self.optimizer.add_weights(self.weights)
+        #####
 
     def load(self, filename):
+        print("load in Mesh.py")
         # Load a mesh
         try:
             self.mesh = openmesh.read_polymesh(
@@ -61,6 +86,7 @@ class Mesh(Geometry):
 
         # Mesh name
         self.name = os.path.splitext(os.path.basename(filename))[0]
+        print("self.name: ", self.name)
 
         # We need normals
         self.mesh.request_face_normals()
@@ -69,6 +95,20 @@ class Mesh(Geometry):
 
         # Save original mesh
         self.mesh_original = copy.deepcopy(self.mesh)
+
+        ############# Maryam
+
+        # Load the file as a quad mesh using the old framework such that we can optimize later through it
+        self.quad_mesh = Gridshell()
+        self.quad_mesh.read_obj_file(filename)
+        self.optimizer.mesh = self.quad_mesh 
+        # MMesh.make_mesh()
+
+        self.optimizer.mesh._copy = self.optimizer.mesh.copy_mesh()   
+        
+        # print("self.quad_mesh._faces: ", self.quad_mesh._faces)
+        print("how many: ", (self.quad_mesh._faces).shape)
+        #############
 
         # Success!
         return True
@@ -120,11 +160,14 @@ class Mesh(Geometry):
         face_map = dict()
         normals_orig = dict()
         tri_mesh = copy.deepcopy(mesh)
+        
         for fh in tri_mesh.faces():
             try:
                 face_map[fh.idx()]
+                
             except KeyError:
                 face_map[fh.idx()] = fh.idx()
+                # print("tri_mesh.faces(): ",face_map[fh.idx()])
 
             n = tri_mesh.normal(fh)
             try:
@@ -182,6 +225,7 @@ class Mesh(Geometry):
 
         # Vertices
         for vh in tri_mesh.vertices():
+            # print("vh is  what: ", vh.idx)
             p = tri_mesh.point(vh)
             verts[vh.idx(), 0] = p[0]
             verts[vh.idx(), 1] = p[1]
@@ -193,9 +237,13 @@ class Mesh(Geometry):
             for fvi in tri_mesh.fv(fh):
                 faces[fh.idx(), vi] = fvi.idx()
                 vi += 1
+        print("faces: ", faces.shape)
+        # print("faces: ", faces)
         # Face map
         for key, value in face_map.items():
             f_to_f[key, 0] = value
+            # print("f_to_f[key, 0]: ",  key, value)
+        print("f_to_f[key, 0]: ",  f_to_f.shape)
 
         # Normals
         for key, value in normals_orig.items():
@@ -226,46 +274,114 @@ class Mesh(Geometry):
             edges2[eh.idx(), 0] = v2[0]
             edges2[eh.idx(), 1] = v2[1]
             edges2[eh.idx(), 2] = v2[2]
-        
+        # print("tri mesh vertices: ", verts)
         return verts, faces, f_to_f, norms, texs, edges1, edges2
     ############### Maryam
 
-    def tri_to_quad(self):
-        print("tri_to_quad")
-        # This takes a Mesh object and returns a mesh object from geometry-lab-main
-        # transformed_mesh = quad_mesh()
-        transformed_mesh = MMesh()  # MMesh already makes a Mesh object so i can use both's functions
-        verts, faces,  _, _, _, _, _ = Mesh.to_render_data(self.mesh)
-        extracted_faces = faces[:, :3]
-        print("self.mesh.vertices(): ",self.mesh.vertices())
-        print("verts", verts)
-        # print(extracted_faces)
-        #### make mesh should be initialized first, i need to follow the other framework way
-        transformed_mesh.make_mesh(verts, extracted_faces)
-        return transformed_mesh
-    def quad_to_tri(self):
+    def quad_to_tri(self):  # Something wrong with the faces
         # This takes  a mesh object from geometry-lab-main and returns a Mesh object
-        return 0
-    
-    def optimize(self):
-        print("optimize")
-        quad = Mesh.tri_to_quad(self)
-        ### use optimize from ortho
-        print("quad type: ", type(quad))
-        print("opt mesh: ",self.optimizer.mesh) 
-        ### update q.V, F, and such to set the dimentions like mesh_propogate
-        # self.mesh._V += len(new_v)
-        # self.mesh._F += len(new_f)
-        # self.mesh._E += 2*len(new_v)-1
-        # # print(self.mesh._V,self.mesh._F,self.mesh._E)
-        # self.mesh._vertices = np.vstack((self.mesh._vertices, new_v))
-        # self.mesh._faces = np.vstack((self.mesh._faces, new_f))
-        self.optimizer.mesh = quad 
-        print("opt mesh: ",self.optimizer.mesh) 
-        # self.optimizer.optimize()
-        return 0 
 
-    ############### Maryam
+        vertices = self.optimizer.mesh._vertices
+        faces = self.optimizer.mesh._faces
+
+        # Create a new PolyMesh
+        mesh = openmesh.PolyMesh()
+
+        # Add vertices to the mesh
+        for vertex in vertices:
+            mesh.add_vertex(vertex)
+
+        # Add faces to the mesh
+        for face in faces:
+           
+            # Create a new face with the vertex indices
+            face_handles = [mesh.vertex_handle(vertex_index) for vertex_index in face]
+            # print("face handles: ", face_handles)
+            mesh.add_face(face_handles)
+
+        # Assign the created tri mesh to self.mesh
+        self.mesh = mesh
+        self.mesh.request_vertex_texcoords2D()
+
+        # We need normals
+        self.mesh.request_face_normals()
+        self.mesh.request_vertex_normals()
+        self.mesh.update_normals()
+
+        # Save original mesh
+        # self.mesh_original = copy.deepcopy(self.mesh)
+
+        return True
+    
+    def optimize(self, GGG, ISO):
+        print("optimize")
+        ### use optimize from ortho
+        
+        self.set_settings(GGG,ISO)
+        self.optimizer.optimize()
+        self.quad_to_tri()
+        return 0 
+    
+    def set_settings(self, GGG, ISO):
+        print("set_setting in Mesh.py")
+        self.optimizer.threshold = 1e-20
+    
+        self.optimizer.add_weight('mesh_fairness', self.meshFairness)
+        self.optimizer.add_weight('boundary_fairness', self.boundFairness)
+        self.optimizer.add_weight('GGG_weight', self.GGG_weight) # Maryam 
+        # print("set_setting, G weight: ", self.GGG_weight)
+        self.optimizer.add_weight('vertex_control_weight', self.vertexControl) # Maryam 
+        self.optimizer.add_weight('iso_weight', self.iso_weight )
+        self.optimizer.set_weight('GGG' , GGG)
+        self.optimizer.set_weight('iso' , ISO)
+
+        ############ APROX
+        self.optimizer.add_weight('aprox', self.aprox_weight)
+        print("self.v_ids in Mesh Class: ",self.v_ids)
+        self.optimizer.set_weight('vertex_control', self.v_ids)
+
+        # self.optimizer.add_weight('self_closeness', self.self_closeness)
+
+        # ---------------------------------------------------------------------
+
+        # self.optimizer.set_weight('AAG',  self.AAG) # Maryam
+        # self.optimizer.set_weight('AGG',  self.AGG) # Maryam
+        # self.optimizer.set_weight('GGG',  self.GGG) # Maryam
+        # self.optimizer.set_weight('planar_ply1', self.opt_planar_polyline1)
+        # self.optimizer.set_weight('planar_ply2', self.opt_planar_polyline2)
+    
+    def diagonal(self):
+        self.optimizer.mesh._rrv4f4 = None
+        self.optimizer.mesh._rr_star = None
+        self.optimizer.mesh._ind_rr_star_v4f4 = None
+        self.optimizer.mesh._num_rrv4f4 = 0
+        self.optimizer.mesh._ver_rrv4f4  = None
+        self.optimizer.mesh._rr_star_corner = None
+
+        V = self.optimizer.mesh.vertices
+        # print('V shape',V.shape)
+        v,va,vb,vc,vd = self.optimizer.mesh.rr_star_corner
+
+        return va, v, vc
+        # pl1, pl2, pl3, pl4 = self.quad_mesh.get_quad_diagonals()
+        # print("pl1: ", pl1)
+    ############## Maryam
+    def save_obj(self):
+        vertices = self.optimizer.mesh._vertices
+        faces = self.optimizer.mesh._faces
+
+        # Create and write to OBJ file
+        with open('stripp.obj', 'w') as obj_file:
+            for v in vertices:
+                obj_file.write(f'v {v[0]} {v[1]} {v[2]}\n')
+
+            for f in faces:
+                obj_file.write(f'f {" ".join(map(str, f))}\n')
+        with open('file.obj', 'w') as f:
+            for vertex in vertices:
+                f.write("v " + " ".join([str(coord) for coord in vertex]) + "\n")
+            for face in faces:
+                f.write("f " + " ".join([str(int(idx)+1) for idx in face]) + "\n")
 
     def mesh(self):
         return self.mesh
@@ -420,3 +536,4 @@ class Mesh(Geometry):
         indices = numpy.arange(self.mesh.n_vertices())
         normals = self.mesh.vertex_normals()
         return indices, normals
+    

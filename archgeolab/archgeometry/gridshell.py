@@ -762,7 +762,7 @@ class Gridshell(MMesh):  # Hui
     # -------------------------------------------------------------------------
 
     def mesh_fairness(self, **kwargs):
-        print("mesh_fairness2")
+        print("mesh_fairness22")
 
         """ Hui note: 
             if n=4: 
@@ -906,10 +906,12 @@ class Gridshell(MMesh):  # Hui
         return K, s
 
     def boundary_fairness(self, **kwargs):
+        print("boundry fairness: ")
         "Hui note: Vl+Vr = 2*V "
         N = kwargs.get('N', 3*self.V)
         if 'boundary_fairness' in kwargs:
             w = kwargs.get('boundary_fairness')
+            print("w: ", w)
         else:
             w = kwargs.get('w', 1)
         V = self.V

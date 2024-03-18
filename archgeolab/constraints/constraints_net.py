@@ -13,7 +13,8 @@ from scipy import sparse
 from archgeolab.constraints.constraints_basic import column3D,con_edge,\
     con_unit,con_constl,con_equal_length,\
     con_planarity,con_unit_normal,con_orient,\
-    con_equal_angles, con_parallel, G_diag, _con_fairness, con_vertex_control_1st_polyline #Maryam
+    con_equal_angles, con_parallel, G_diag, _con_fairness, con_vertex_control_1st_polyline,\
+    con_vertex_control,con_vertex_control2, con_isometric2 #Maryam
 from archgeolab.archgeometry.quadrings import MMesh
 # -------------------------------------------------------------------------
 """
@@ -431,32 +432,34 @@ def con_GGG(rregular=False,**kwargs):
     H,r = _con_GGG(X,w,w2,c_v,c_v1,c_v2,c_v3,c_v4,c_va, c_vc, X_1st_polyline, V)
     return H,r
 
-def _con2_GGG(X,w,w2,c_v,c_v1,c_v2,c_v3,c_v4,c_va, c_vc,c_n, c_b1, c_b2,  c_b3, X_1st_polyline,V):
+# def _con2_GGG(X,w,w2,c_v,c_v1,c_v2,c_v3,c_v4,c_va, c_vc,c_n, c_b1, c_b2,  c_b3, X_1st_polyline,V):
+def _con2_GGG(X,w,w2,c_v,c_v1,c_v2,c_v3,c_v4,c_va, c_vc,c_n, c_b1, c_b2,  c_b3,V, v_ids, X_copy,mesh):
     print("_con2_GGG")
+    print("in _con2_GGG, the  vertex for v_ids: ",  X[v_ids], X[v_ids+V], X[v_ids+2*V])
 
-    # G net constraint b1,b2,b3 orthogoonal to n
+    # G net constraint b1,b2,b3 orthogonal to n
     H1,r1 = G_diag(X, c_b1, c_n)
     H2,r2 = G_diag(X, c_b2, c_n)
     H3,r3 = G_diag(X, c_b3, c_n)
-    print(' Err for H1 ','%.3e' % np.sum(np.square(H1*X-r1)))
-    print(' Err for H2 ','%.3e' % np.sum(np.square(H2*X-r2)))
-    print(' Err for H3 ','%.3e' % np.sum(np.square(H3*X-r3)))
+    # print(' Err for H1 ','%.3e' % np.sum(np.square(H1*X-r1)))
+    # print(' Err for H2 ','%.3e' % np.sum(np.square(H2*X-r2)))
+    # print(' Err for H3 ','%.3e' % np.sum(np.square(H3*X-r3)))
 
     # N constraints
     H4,r4 = con_planarity(X,c_v1,c_v3,c_n) 
     H5,r5 = con_planarity(X,c_v2,c_v4,c_n) 
     H6,r6 = con_unit(X,c_n)
-    print(' Err for H4 ','%.3e' % np.sum(np.square(H4*X-r4)))
-    print(' Err for H5 ','%.3e' % np.sum(np.square(H5*X-r5)))
-    print(' Err for H6 ','%.3e' % np.sum(np.square(H6*X-r6)))
+    # print(' Err for H4 ','%.3e' % np.sum(np.square(H4*X-r4)))
+    # print(' Err for H5 ','%.3e' % np.sum(np.square(H5*X-r5)))
+    # print(' Err for H6 ','%.3e' % np.sum(np.square(H6*X-r6)))
 
     # B constraints
     H7,r7 = con_planarity(X,c_v1,c_v,c_b1) 
     H8,r8 = con_planarity(X,c_v3,c_v,c_b1) 
     H9,r9 = con_unit(X,c_b1)
-    print(' Err for H7 ','%.3e' % np.sum(np.square(H7*X-r7)))
-    print(' Err for H8 ','%.3e' % np.sum(np.square(H8*X-r8)))
-    print(' Err for H9 ','%.3e' % np.sum(np.square(H9*X-r9)))
+    # print(' Err for H7 ','%.3e' % np.sum(np.square(H7*X-r7)))
+    # print(' Err for H8 ','%.3e' % np.sum(np.square(H8*X-r8)))
+    # print(' Err for H9 ','%.3e' % np.sum(np.square(H9*X-r9)))
     # print("IN con2 GGG, H8, r  ", H8.shape, r8.shape)
     # print("IN con2 GGG, H, r  ", H7.shape, r7.shape)
     # print("IN con2 GGG, H, r  ", H9.shape, r9.shape)
@@ -464,16 +467,16 @@ def _con2_GGG(X,w,w2,c_v,c_v1,c_v2,c_v3,c_v4,c_va, c_vc,c_n, c_b1, c_b2,  c_b3, 
     H10,r10 = con_planarity(X,c_v2,c_v,c_b2) 
     H11,r11 = con_planarity(X,c_v4,c_v,c_b2) 
     H12,r12 = con_unit(X,c_b2)
-    print(' Err for H10 ','%.3e' % np.sum(np.square(H10*X-r10)))
-    print(' Err for H11 ','%.3e' % np.sum(np.square(H11*X-r11)))
-    print(' Err for H12','%.3e' % np.sum(np.square(H12*X-r12)))
+    # print(' Err for H10 ','%.3e' % np.sum(np.square(H10*X-r10)))
+    # print(' Err for H11 ','%.3e' % np.sum(np.square(H11*X-r11)))
+    # print(' Err for H12','%.3e' % np.sum(np.square(H12*X-r12)))
 
     H13,r13 = con_planarity(X,c_va,c_v,c_b3) 
     H14,r14 = con_planarity(X,c_vc,c_v,c_b3) 
     H15,r15 = con_unit(X,c_b3)
-    print(' Err for H13 ','%.3e' % np.sum(np.square(H13*X-r13)))
-    print(' Err for H14 ','%.3e' % np.sum(np.square(H14*X-r14)))
-    print(' Err for H15 ','%.3e' % np.sum(np.square(H15*X-r15)))
+    # print(' Err for H13 ','%.3e' % np.sum(np.square(H13*X-r13)))
+    # print(' Err for H14 ','%.3e' % np.sum(np.square(H14*X-r14)))
+    # print(' Err for H15 ','%.3e' % np.sum(np.square(H15*X-r15)))
     
 
 
@@ -487,11 +490,13 @@ def _con2_GGG(X,w,w2,c_v,c_v1,c_v2,c_v3,c_v4,c_va, c_vc,c_n, c_b1, c_b2,  c_b3, 
     r_B = np.r_[r7*w,r8*w,r9,r10*w,r11*w,r12,r13*w,r14*w,r15]
 
     "vi - vo = 0: vertex control"
-    Hv,rv = con_vertex_control_1st_polyline(X,X_1st_polyline,V)
-    print(' Err for Hv ','%.3e' % np.sum(np.square(Hv*X-rv)))
+    Hv,rv = con_vertex_control(X, v_ids, X_copy,mesh)
+    # print(' Err for Hv ','%.3e' % np.sum(np.square(Hv*X-rv)))
 
     H = sparse.vstack((H_G,H_N,H_B, Hv*w2))
     r = np.r_[r_G,r_N,r_B, rv*w2]
+    # H = sparse.vstack((H_G,H_N,H_B))
+    # r = np.r_[r_G,r_N,r_B]
     print("IN con2 GGG, H, r  ", H_B.shape, r_B.shape)
     return H,r
 
@@ -534,16 +539,28 @@ def con2_GGG(rregular=False,**kwargs):
     c_va = column3D(va,0,mesh.V)
     c_vc = column3D(vc,0,mesh.V)
     c_n = Nanet-3*num+np.arange(3*num)
-    print("mesh normals: ",  X[c_n])
+    # print("c_n, X shapes:  ", c_n, X.shape)
+    # print("mesh normals: ",  X[c_n])
     num2 = int((len(c_v))/3) #is  num  == num2  ???
     c_b1 = Nanet+np.arange(3*num2)
     c_b2 = c_b1 + 3*num2
     c_b3 = c_b2 + 3*num2
-    X_1st_polyline =  mesh._copy._vertices
     V  = mesh.V
-    print(c_b3)
+    X_copy = mesh._copy._vertices
+
+    v_ids  = kwargs.get('vertex_control')
+    v_ids = np.array(v_ids)
+    print("v_ids in con2_GGG: ", v_ids)
     
-    H,r = _con2_GGG(X,w,w2,c_v,c_v1,c_v2,c_v3,c_v4,c_va, c_vc,c_n, c_b1, c_b2,  c_b3, X_1st_polyline,V)
+    # H,r = _con2_GGG(X,w,w2,c_v,c_v1,c_v2,c_v3,c_v4,c_va, c_vc,c_n, c_b1, c_b2,  c_b3, X_1st_polyline,V)
+    H,r = _con2_GGG(X,w,w2,c_v,c_v1,c_v2,c_v3,c_v4,c_va, c_vc,c_n, c_b1, c_b2,  c_b3,V,v_ids, X_copy,mesh)
+
+    ######## Not sure
+    H2,r2 = aproximate(rregular=False,**kwargs) 
+
+    H = sparse.vstack((H,H2)) #Hn, H6*w,H4*w))
+    r = np.r_[r,r2]#rn,r6*w,r4*w]
+
     return H,r
 
 def con_fairness(rregular=False,**kwargs):
@@ -577,6 +594,92 @@ def con_fairness(rregular=False,**kwargs):
 
     return H, r
 
+    #--------------------------------------------------------------------------
+    #
+    #                        Isometric: Maryam
+    #-------------------------------------------------------------------------- 
+
+def isometric(rregular=False,**kwargs):
+    print("isometric")
+
+    #w = kwargs.get('GGG') #change
+    w = kwargs.get('iso_weight')
+    w2 = kwargs.get('vertex_control_weight')
+    print("iso_weight in isometric ", w)
+    print("vertex control weight in isometric ", w2)
+    mesh = kwargs.get('mesh')
+    X = kwargs.get('X')
+    # print("X in con_2GGG:  ", X.shape, len(X))
+    
+    mesh._rrv4f4 = None
+    mesh._rr_star = None
+    mesh._ind_rr_star_v4f4 = None
+    mesh._num_rrv4f4 = 0
+    mesh._ver_rrv4f4  = None
+    mesh._rr_star_corner = None
+    Nanet = kwargs.get('Nanet')
+        
+    v,va,vb,vc,vd = mesh.rr_star_corner
+     
+    c_v  = column3D(v ,0,mesh.V)
+    c_va = column3D(va,0,mesh.V)
+    c_vc = column3D(vc,0,mesh.V)
+    c_vb = column3D(vb,0,mesh.V)
+    c_vd = column3D(vd,0,mesh.V)
+
+
+    v_ids  = kwargs.get('vertex_control')
+    v_ids = np.array(v_ids)
+    print(v_ids)
+    # print("v_ids in con2_GGG: ", v_ids)
+
+    # H1, r1 = con_isometric(X, c_va, c_vd, mesh)
+    # H2, r2 = con_isometric(X,c_vc, c_vb, mesh)
+    # H3, r3 = con_angle_perserve(X, c_va, c_vd, c_vc, c_vb, mesh)
+    "vi - vo = 0: vertex control"
+    Hv,rv = con_vertex_control(X, v_ids, mesh._copy._vertices, mesh)
+    H1, r1 = con_isometric2(X, mesh)
+
+    H = sparse.vstack((H1*w, Hv*w2))
+    r = np.r_[r1*w, rv*w2]
+
+    return H,r
+
+    #--------------------------------------------------------------------------
+    #
+    #                        Aproximity: Maryam
+    #-------------------------------------------------------------------------- 
+def aproximate(rregular=False,**kwargs):   ###### APROX NOT TESTED
+    print("aproximate function")
+    mesh = kwargs.get('mesh')
+    X = kwargs.get('X')
+    w = kwargs.get('aprox')
+    print("w in aprox: ", w)
+    X_orig = mesh._copy._vertices
+
+    X_orig = X_orig.T.flatten()
+    # print("X_orig:", X_orig)
+    V =  mesh.V
+    c_vx = np.arange(V)
+    c_vy = c_vx+V
+    c_vz = c_vy+V
+    X_vx = X_orig[np.arange(V)]
+    X_vy = X_orig[np.arange(V,2*V)]
+    X_vz = X_orig[np.arange(2*V,3*V)]
+
+    col = np.r_[c_vx, c_vy, c_vz]
+    # print("col:", col)
+    row =  np.r_[np.arange(3*V)]
+    # print("row:", row)
+    data = np.r_[np.tile(-1,3*V)]
+    # print("data:", data)
+    f = np.r_[X_vx-X[c_vx], X_vy-X[c_vy], X_vz-X[c_vz]]
+    
+    H = sparse.coo_matrix((data,(row,col)), shape=(3*V, len(X)))
+    print("NORM OF f ", np.linalg.norm(f))
+    r = H*X - f
+    # print("H and r, ", H, r)
+    return H*w,r*w
 
     #--------------------------------------------------------------------------
     #                       S-net:

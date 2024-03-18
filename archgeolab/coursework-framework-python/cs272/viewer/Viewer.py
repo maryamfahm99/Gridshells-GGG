@@ -405,6 +405,7 @@ class Viewer(object):
     def select_hovered_core(self):
         # print("select_hovered_core")
         width_window, height_window = glfw.get_framebuffer_size(self.window)
+        # print("width window: ", width_window, height_window)
         # print("self.current_mouse_x and y : ", self.current_mouse_x, " ", self.current_mouse_y)
         # print("window widthand height: ",width_window, " ", height_window)
 
@@ -504,7 +505,7 @@ class Viewer(object):
         return True
 
     def mouse_move(self, mouse_x, mouse_y):
-
+        # print("mouse_move: ", mouse_x, mouse_y)
         if self.hack_never_moved:
             self.down_mouse_x = mouse_x
             self.down_mouse_y = mouse_y
@@ -515,6 +516,7 @@ class Viewer(object):
 
         for plugin in self.plugins:
             if plugin.mouse_move(mouse_x, mouse_y):
+                # print("move again?:  ")
                 return True
 
         if self.callback_mouse_move is not None:
@@ -551,9 +553,10 @@ class Viewer(object):
                         mouse_y - (height_window - self.core().viewport[1] - self.core().viewport[3]))
                 else:
                     assert (False and "Unknown rotation type")
-
+            
             elif self.mouse_mode == MouseMode.Translation:
                 # translation
+                
                 pos1 = unproject(
                     numpy.array([mouse_x, self.core().viewport[3] - mouse_y, self.down_mouse_z]),
                     self.core().view, self.core().proj, self.core().viewport)
@@ -572,6 +575,7 @@ class Viewer(object):
 
             else:
                 pass
+            # print("mouse move again : ", mouse_x, mouse_y)
 
         return True
 

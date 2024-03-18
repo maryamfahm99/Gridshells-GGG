@@ -9,7 +9,7 @@ import numpy as np
 #------------------------------------------------------------------------------
 
 def orient_rings(mesh):
-    print("orient")
+    # print("orient")
     h_boundary = mesh.boundary_halfedges()
     v_visited = np.full(mesh.V, False)
     _, _, l = mesh.vertex_ring_vertices_iterators(return_lengths=True, sort=True)
@@ -17,14 +17,14 @@ def orient_rings(mesh):
     R = []
     for h in range(2*mesh.E):
         h_ring = mesh.halfedge_ring(h)
-        print(len(h_ring))
+        # print(len(h_ring))
         if len(h_ring) == 4:
             v = mesh.origin(h)
             v_ring = mesh.origin(mesh.twin(h_ring))
             R.append([v, v_ring[0], v_ring[1], v_ring[2], v_ring[3]])
             v_visited[v] = True
             H1 = [h_ring[2]]
-            print(H1)
+            # print(H1)
             H2 = [h_ring[1]]
             H3 = [h_ring[0]]
             H4 = [h_ring[3]]

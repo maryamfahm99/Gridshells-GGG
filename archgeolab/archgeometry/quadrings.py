@@ -1769,7 +1769,7 @@ class MMesh(Mesh):
         self._rr_star_corner = None
 
         V = self.vertices
-        print('V shape',V.shape)
+        # print('V shape',V.shape)
         v,va,vb,vc,vd = self.rr_star_corner
         print(len(v),len(va))
         #v1,v2,v3,v4 = self.rr_quadface.T

@@ -212,7 +212,7 @@ def G_diag(X, c_n, c_m):
     H = sparse.coo_matrix((data,(row,col)), shape=(num, len(X)))
     #print("length of r, gdiag")
     #print(np.shape(r), np.shape(H))
-    print("NORM OF f ", np.linalg.norm(r))
+    print("NORM OF f from G_diag: ", np.linalg.norm(r))
     r = H*X-r # not sure
     return H,r
 
@@ -369,6 +369,174 @@ def con_vertex_control_1st_polyline(X,X_1st_polyline,V):
     print("NORM OF f ", np.linalg.norm(f))
     r = H*X - f
     return H,r
+
+def con_vertex_control(X, v_ids, X_copy,mesh):
+    print("con_vertex_control")
+    # X_orig = mesh._copy._vertices[v_ids]
+    X_orig = mesh._vertices[v_ids]
+
+    # X_orig = X_copy[v_ids]
+    
+    num = int(len(X_orig))
+    # print("X_orig:", num)
+    X_orig = X_orig.T.flatten()
+    # print("X_orig:", X_orig)
+    V =  mesh.V
+    c_vx = v_ids
+    # print("c_vx:", c_vx)
+    c_vy = v_ids+V
+    # print("c_vy:", c_vy)
+    c_vz = v_ids+2*V
+    X_vx = X_orig[np.arange(num)]
+    X_vy = X_orig[np.arange(num,2*num)]
+    X_vz = X_orig[np.arange(2*num,3*num)]
+
+    col = np.r_[c_vx, c_vy, c_vz]
+    # print("col:", col)
+    row =  np.r_[np.arange(3*num)]
+    # print("row:", row)
+    data = np.r_[np.tile(-1,3*num)]
+    # print("data:", data)
+    f = np.r_[X_vx-X[c_vx], X_vy-X[c_vy], X_vz-X[c_vz]]
+    # print("f:", f)
+    # print("r value ", X_vx, X[c_vx])
+    # print(data, row, col)
+    H = sparse.coo_matrix((data,(row,col)), shape=(3*num, len(X)))
+    # print("H and r, ", H, r)
+    print("NORM OF f ", np.linalg.norm(f))
+    r = H*X - f
+    return H,r
+
+def con_vertex_control2(X, v_ids, X_copy,mesh):
+    print("con_vertex_control")
+    X_orig = mesh._copy._vertices[v_ids]
+    # X_orig = X_copy[v_ids]
+    
+    num = int(len(X_orig))
+    print("X_orig:", num)
+    X_orig = X_orig.T.flatten()
+    print("X_orig:", X_orig)
+    V =  mesh.V
+    c_vx = v_ids
+    # print("c_vx:", c_vx)
+    c_vy = v_ids+V
+    # print("c_vy:", c_vy)
+    c_vz = v_ids+2*V
+    X_vx = X_orig[np.arange(num)]
+    X_vy = X_orig[np.arange(num,2*num)]
+    X_vz = X_orig[np.arange(2*num,3*num)]
+    # X_vy = X_orig[np.arange(V,V+num)]
+    # X_vz = X_orig[np.arange(2*V,2*V+num)]
+
+    col = np.r_[c_vx, c_vy, c_vz]
+    # print("col:", col)
+    row =  np.r_[np.arange(3*num)]
+    # print("row:", row)
+    data = np.r_[np.tile(-1,3*num)]
+    # print("data:", data)
+    f = np.r_[X_vx-X[c_vx], X_vy-X[c_vy], X_vz-X[c_vz]]
+    # print("f:", f)
+    # print("r value ", X_vx, X[c_vx])
+    # print(data, row, col)
+    H = sparse.coo_matrix((data,(row,col)), shape=(3*num, len(X)))
+    print("NORM OF f ", np.linalg.norm(f))
+    r = H*X - f
+    print("H and r, ", H, r)
+    return H,r
+
+
+def con_isometric2(X, mesh):
+    "(va-vd)^2=(va'-vd')^2"
+    "(vc-vb)^2=(vc'-vb')^2"
+    print("con_isometric2")
+    # print("X: ", X)
+    X_orig = mesh._copy._vertices
+    # print("X reference: ", X_orig)
+
+    V =  mesh.V
+    # n = 20   # number of vertices for each polyline
+    n = 32
+    nc = int(V/n) # number of rows
+    va = []
+    vb = []
+    vc = []
+    vd = []
+
+    ### Create the indices
+
+    for i in range(n-1):      #  i = 0, ..., 18 
+        for j in range(nc-1): #  j = 0, ..., 10    12 is number of rows 
+            va.append(j*n+i)
+            vc.append((j+1)*n+i)
+            vd.append((j+1)*n+i+1)
+            vb.append(j*n+i+1)
+    # print("va, vb,..: ", nc)
+    # print("va, vb,..: ", va)
+    # print("va, vb,..: ", vb)
+    # print("va, vb,..: ", vc)
+    # print("va, vb,..: ", vd)
+
+    c_va = column3D(va, 0, V)
+    c_vb = column3D(vb, 0, V)
+    c_vc = column3D(vc, 0, V)
+    c_vd = column3D(vd, 0, V)
+    # print("c_vs: ", c_va)
+    # print("c_vs: ", c_vb)
+    # print("c_vs: ", c_vc)
+    # print("c_vs: ", c_vd)
+
+    # #### The vertices
+            
+    
+    
+    X_va = X_orig[va]
+    X_vb = X_orig[vb]
+    X_vc = X_orig[vc]
+    X_vd = X_orig[vd]
+
+    num = int(len(X_va))
+
+
+    # ####  "(va-vd)^2=(va'-vd')^2"
+
+    col1 = np.r_[c_va, c_vd]
+    row1 = np.tile(np.arange(num),6)
+    data1= 2*np.r_[X[c_va]-X[c_vd],X[c_vd]-X[c_va]]
+    f1 = np.linalg.norm((X[c_va]-X[c_vd]).reshape(-1,3, order='F'),axis=1)**2 - np.linalg.norm(X_va-X_vd, axis = 1)**2
+    H1 = sparse.coo_matrix((data1,(row1,col1)), shape=(num,len(X)))
+    # print("shapes: ", H.shape, X.shape, f.shape)
+    print("NORM OF f ", np.linalg.norm(f1))
+    r1 = H1*X - f1
+
+    # ####   "(vc-vb)^2=(vc'-vb')^2"
+
+    col2 = np.r_[c_vc, c_vb]
+    row2 = np.tile(np.arange(num),6)
+    data2= 2*np.r_[X[c_vc]-X[c_vb],X[c_vb]-X[c_vc]]
+    f2 = np.linalg.norm((X[c_vc]-X[c_vb]).reshape(-1,3, order='F'),axis=1)**2 - np.linalg.norm(X_vc-X_vb, axis = 1)**2
+    H2 = sparse.coo_matrix((data2,(row2,col2)), shape=(num,len(X)))
+    # print("shapes: ", H.shape, X.shape, f.shape)
+    print("NORM OF f ", np.linalg.norm(f2))
+    r2 = H2*X - f2
+
+    # ####   "(va-vd) . (vb-vc) =  (va'-vd') . (vb'-vc')"
+
+    col3 = np.r_[c_va,c_vb, c_vc, c_vd]
+    row3 = np.tile(np.arange(num),12)
+    data3 = np.r_[X[c_vb]-X[c_vc],X[c_va]-X[c_vd],X[c_vd]-X[c_va],X[c_vc]-X[c_vb]]
+    f3 = np.einsum('ij,ij->i',(X[c_va]-X[c_vd]).reshape(-1,3, order='F'),(X[c_vb]-X[c_vc]).reshape(-1,3, order='F')) - np.einsum('ij,ij->i',(X_va-X_vd), (X_vb-X_vc))
+    H3 = sparse.coo_matrix((data3,(row3,col3)), shape=(num,len(X)))
+    print("NORM OF f ", np.linalg.norm(f3))
+    # print("shapes: ", H.shape, X.shape, f.shape)
+    r3 = H3*X - f3
+
+    H = sparse.vstack((H1,H2, H3))
+    r = np.r_[r1,r2,r3]
+
+    # # print("shape r: ", r.shape)
+    return H,r
+    # return 0 
+
 
 def _con_fairness(X,c_v,c_v1,c_v3):
     """
