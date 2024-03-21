@@ -500,7 +500,7 @@ class GP_OrthoNet(GuidedProjectionBase):
             X = np.r_[X,V4N.flatten('F')]
 
         if self.get_weight('GGG'): # Maryam
-            # if(self.mesh._mesh_propogate):
+            if(self.mesh._mesh_propogate):
                 # print("self.mesh._vertices: ", self.mesh._vertices)
                 print("initialize_unknowns_vector GGG" )
                 v,v1,v2,v3,v4 = self.mesh.rrv4f4

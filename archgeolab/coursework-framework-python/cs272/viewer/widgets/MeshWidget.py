@@ -290,6 +290,10 @@ class MeshWidget(ViewerWidget):
                                 V = (self.viewer.data().V).astype(numpy.float64)
                                 self.viewer.data(self.viewer.selected_data_index).set_points(numpy.array(V[mesh.v_ids]).reshape((-1,3)), colors)
 
+                        if imgui.button("Propogate", -1, 0):
+                            mesh.propogate()
+                            mesh.update_viewer_data(self.viewer.data(index))
+
                         changed, MeshWidget.show_vertices_controlled = imgui.checkbox("Show vertices to be controlled", MeshWidget.show_vertices_controlled)
                         if changed:
                             if (MeshWidget.show_vertices_controlled):

@@ -7,6 +7,7 @@ from enum import IntEnum
 from utils.colormap import ColorMapType
 from utils.maths import gaussian, random_vector
 from geometry.Geometry import Geometry
+import numpy as np
 
 #######################  Maryam import
 import sys
@@ -57,7 +58,8 @@ class Mesh(Geometry):
         p2= None
         # self.v_ids = list(range(20))
         # self.v_ids = list(range(20))
-        self.v_ids = list(range(32))
+        self.v_ids = list(range(20))
+        self.numVerPoly = 20
         self.weights = {
         'GGG' : 0, # Maryam
         'iso' : 0,
@@ -365,6 +367,191 @@ class Mesh(Geometry):
         return va, v, vc
         # pl1, pl2, pl3, pl4 = self.quad_mesh.get_quad_diagonals()
         # print("pl1: ", pl1)
+    
+    def propogate(self):
+        # print("vertices: ", self.mesh._vertices)
+        # print("faces: ", self.mesh._faces)
+        # print("type of  mesh: ", type(self.mesh))
+        # print(type(self.mesh._vertices))
+        print("propogate")
+        self.optimizer.mesh._mesh_propogate = True
+        # Store the initial strip.
+        # if (self.mesh._copy is None):
+        #     self.mesh._copy = self.mesh.copy_mesh()
+
+        # Number of vertices belonging to the first polyline   
+        numVperPoly  = self.numVerPoly
+        # numVperPoly = 32
+        print(numVperPoly)
+        # numVperPoly = 20
+
+        # Number of all the vertices
+        V = self.optimizer.mesh._V # last index = V - 1 here V = 23
+        vertices = self.optimizer.mesh._vertices
+
+        # Define a list of indices for v*, v1, v2, v3, v4, va, vb, vc, vd
+
+        #  va  v1  vd  #
+        #  v2  v*  v4  #
+        #  vb  v3  vc  #
+
+        v_star = np.arange(V-numVperPoly+1,V-1)
+        v1 = v_star - 1
+        v2 = v_star - numVperPoly
+        v3 = v_star + 1
+        v4 = v_star + numVperPoly  # This one is not defined yet
+        va = v2 - 1
+        vb = v2 + 1
+        vc = v4 + 1                # This one is not defined yet
+        vd = v4 - 1                # This one is not defined yet
+
+        # initiate bisectors for each v_star and call them normals // check if vectors same dire, norm of cross prod is small
+        norm1 = np.linalg.norm((vertices[v1]-vertices[v_star]), axis = 1)[:, np.newaxis]
+        norm2 = np.linalg.norm((vertices[v3]-vertices[v_star]), axis = 1)[:, np.newaxis]
+        delta = (vertices[v1]-vertices[v_star])/norm1+(vertices[v3]-vertices[v_star])/norm2 # (a-b)
+        norm3 = np.linalg.norm((vertices[v2]-vertices[v_star]), axis = 1)[:, np.newaxis]
+        delta = np.cross(((vertices[v1]-vertices[v_star])/norm1), ((vertices[v2]-vertices[v_star])/norm3))
+        norms = np.linalg.norm(delta, axis = 1) 
+        # print(norms)
+        normals = delta / norms[:, np.newaxis]
+        # print(normals)
+
+        # # find the lengths of new sides of the inner triangles
+            
+        # 1) define the angles A, B, C
+        A = []
+        B = []
+        C = []
+        c = []
+        for i in range(len(v_star)):
+            # print("i: ", i)
+            # A = arccos( (v1-v_star)*(va-v_star) / l1 * la)
+            a_vec = (vertices[v1[i]]-vertices[v_star[i]])
+            b_vec = (vertices[va[i]]-vertices[v_star[i]])
+            la = np.linalg.norm(a_vec)
+            lb = np.linalg.norm(b_vec)
+            A_temp = np.arccos(np.dot(a_vec,b_vec)/(la*lb))
+            A = np.r_[A,A_temp]  
+            
+            if(i != len(v_star) - 1):  # makes sure we are still in the inner triangles
+                # B = arccos( (v_star-v3)*(v_star-v2))
+                a_vec = (vertices[v3[i+1]]-vertices[v_star[i+1]])
+                # print("v3 should be 7: ", v3[i+1], v_star[i+1])
+                b_vec = (vertices[v2[i+1]]-vertices[v_star[i+1]])
+                la = np.linalg.norm(a_vec)
+                lb = np.linalg.norm(b_vec)
+                B_temp = np.arccos(np.dot(a_vec,b_vec)/(la*lb))
+                B = np.r_[B,B_temp] 
+
+                # C = 180 - A - B
+                C = np.r_[C,np.pi - A_temp - B_temp] 
+
+                # c = || v_star[i]-v_star[i+1] ||
+                c = np.r_[c,np.linalg.norm(vertices[v_star[i]] - vertices[v_star[i+1]])]
+
+        # print("A: ", np.degrees(A))
+        # print("B: ", np.degrees(B))
+        # print("C: ", np.degrees(C))
+            
+        # print(A)
+        a = np.abs(c*np.sin(A[1:])/np.sin(C))
+        b = np.abs(c*np.sin(B)/np.sin(C))
+        # print("a: ", a)
+        # print("b: ", b)
+        # print("c: ", c)
+
+        # find the direction of the new sides of the inner triangles
+        va_vec = (vertices[va] - vertices[v_star])
+        va_norms = np.linalg.norm(va_vec, axis = 1)  
+        va_normalized = va_vec / va_norms[:, np.newaxis]
+        e1_dir =  2 * np.einsum('ij,ij->i', normals, va_normalized)[:, np.newaxis]* normals - va_normalized
+        # print("calculate manually, ", normals, va_normalized, e1_dir)
+        # print(e1_dir)
+        # print(va_normalized)
+        # print(normals)
+
+        # print("va dot n: ", np.einsum('ij,ij->i', normals, va_normalized))
+        # print("n dot vc: ", np.einsum('ij,ij->i', normals, e1_dir))
+
+        v2_vec = (vertices[v2] - vertices[v_star])
+        v2_norms = np.linalg.norm(v2_vec, axis = 1) 
+        v2_normalized = v2_vec / v2_norms[:, np.newaxis]
+        e2_dir =  2 * np.einsum('ij,ij->i', normals, v2_normalized)[:, np.newaxis]* normals - v2_normalized
+        # print(e2_dir)
+
+        # print("v2 dot n: ", np.einsum('ij,ij->i', normals, v2_normalized))
+        # print("n dot v4: ", np.einsum('ij,ij->i', normals, e2_dir))
+
+        # print("brod: ",  e1_dir[:len(v_star)-1], b[:, np.newaxis])
+        mid_points1  = vertices[v_star][:len(v_star)-1] + e1_dir[:len(v_star)-1]*b[:, np.newaxis]
+        # print("mid points: ", mid_points1)
+
+        mid_points2  = vertices[v_star][1:] + e2_dir[1:]*a[:, np.newaxis]
+        # print("mid points: ", mid_points2)
+
+        mid_points = (mid_points1+ mid_points2)/2
+        # print(mid_points)
+
+
+        # find the outer three vertices.    
+
+        # case 1
+        c = np.r_[c, np.abs(np.linalg.norm(vertices[V-1]-vertices[V-1-numVperPoly]))]
+        vec = (vertices[vb[-1]] - vertices[v3[-1]])
+        vec_normalized = vec / np.linalg.norm(vec)
+        dir1 = 2 * np.dot(normals[-1],vec_normalized)* normals[-1] - vec_normalized
+        last_point = vertices[V-1] + dir1 * c[-1]
+
+
+        # case 2
+        length = np.abs(np.linalg.norm(vertices[v_star[0]]-vertices[v2[0]]))
+        vec2 = (-vertices[v_star[0]] + vertices[v2[0]])
+
+        vec2_normalized = vec2 / np.linalg.norm(vec2)
+        dir2 = 2 * np.dot(normals[0],vec2_normalized)* normals[0] - vec2_normalized
+        second_point = vertices[V-numVperPoly+1] + dir2 * length
+        # print("case2: v2 * normal vs e* normal", np.dot(normals[0], vec2_normalized), np.dot(normals[0], dir2))
+
+        # case 3
+        first_point = vertices[V-numVperPoly] + (vertices[V-numVperPoly]-vertices[V-2*numVperPoly])
+
+        new_v = np.vstack((first_point, second_point, mid_points, last_point))
+        # new_points = np.vstack((first_point, second_point, mid_points, last_point))
+
+        # print(new_v)
+
+        # Add the new faces
+        new_f = np.zeros((numVperPoly-1,4))
+        last_poly = np.arange(V-numVperPoly,V)
+        new_poly = np.arange(V,V+numVperPoly)
+        for i in range(numVperPoly-1):
+            new_f[i] =  np.array([last_poly[i+1],new_poly[i+1],new_poly[i],last_poly[i]])
+
+        #print(self.mesh._vertices)
+        #print(self.mesh._faces)
+        #print(self.mesh._V,self.mesh._F,self.mesh._E)
+
+        # Update the new mesh info
+        self.optimizer.mesh._V += len(new_v)
+        self.optimizer.mesh._F += len(new_f)
+        self.optimizer.mesh._E += 2*len(new_v)-1
+        # print(self.mesh._V,self.mesh._F,self.mesh._E)
+        self.optimizer.mesh._vertices = np.vstack((self.optimizer.mesh._vertices, new_v))
+        self.optimizer.mesh._faces = np.vstack((self.optimizer.mesh._faces, new_f))
+        self.optimizer.mesh.make_mesh(self.optimizer.mesh._vertices, self.optimizer.mesh._faces)
+
+      
+        ############################################### update the variables:
+        ########### X = [Vx, Vy, Vz, 
+                        #  Nx, Ny, Nz,
+                        #  B1x, B1y, B1z, 
+                        #  B2x, B2y, B2z,
+                        #  B3x, B3y, B3z]
+        ########### for each new added v_star (numVperPoly - 2), we add 4 vectors to the auxiliary variables
+        print("done  with mesh propogation")
+        self.optimizer.mesh._copy = self.optimizer.mesh.copy_mesh()  # not tested
+        self.quad_to_tri()
+          
     ############## Maryam
     def save_obj(self):
         vertices = self.optimizer.mesh._vertices
